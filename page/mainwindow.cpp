@@ -12,10 +12,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     //pSimObj = new CAN_Lqr();
     //pSimObj = new CAN_FollowDesired();
-    pSimObj = new CAN_Luenberger();
+    //pSimObj = new CAN_Luenberger();
+    pSimObj = new CAN_BasicFeedback();
 
-
-    pSimObj->simPrm.end_time = 20;
+    pSimObj->simPrm.end_time = 8;
     pSimObj->simPrm.step_size = 0.00001;
     pSimObj->simPrm.sample_freq_div = 10;
 

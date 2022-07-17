@@ -13,17 +13,13 @@
 
 CAN_BasicFeedback::CAN_BasicFeedback(SimObj *parent):SimObj(parent)
 {
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 3; i++)
     {
         dx[i] = 0;
-        x[i]  = 0;
+        x[i]  = 10;
         u[i]  = 0;
-
-        dz[i] = 0;
-        z[i]  = 0;
     }
 
-    z[1] = 1;
 }
 
 CAN_BasicFeedback::~CAN_BasicFeedback()
@@ -34,8 +30,7 @@ CAN_BasicFeedback::~CAN_BasicFeedback()
 
 void CAN_BasicFeedback::dynamic_ode(double *dx, double *x,double *u)
 {
-    dx[0] = x[1];
-    dx[1] = -1*x[0] -0.5*x[1] + u[1];
+    dx[0] = x[0]*x[0] - x[0]*x[0]*x[0] + u[0];
 }
 
 void CAN_BasicFeedback::run(void)
@@ -70,32 +65,29 @@ void CAN_BasicFeedback::sim_run(void)
     run();
 }
 
-void CAN_BasicFeedback::observer(void)
-{
-    dz[0] = -2.5*z[0] + z[1] + 2.5*y;
-    dz[1] = 0.25*z[0] - 0.5*z[1] + u[1] -1.25*y;
 
-
-    z[0] =  z[0] + dz[0] * simPrm.step_size;
-    z[1] =  z[1] + dz[1] * simPrm.step_size;
-}
 
 void CAN_BasicFeedback::simulation(void)
 {
-    u[1] = 1;
-    this->rk4(dx,x,u,simPrm.step_size,2);
 
-    // observer
-    y = x[0];
-    observer();
+    u[0] = -x[0]*x[0] + x[0]* x[0]*x[0] - x[0];
+    this->rk4(&dx[0],&x[0],&u[0],simPrm.step_size,1);
+
+    u[1] = -x[1]*x[1] - x[1];
+    this->rk4(&dx[1],&x[1],&u[1],simPrm.step_size,1);
+
+    u[2] = -x[2]*x[2];
+    this->rk4(&dx[2],&x[2],&u[2],simPrm.step_size,1);
+
 }
 
 void CAN_BasicFeedback::wavePlot(void)
 {
-    emit signal_appendWave("x0","x0",simPrm.real_time,x[0]);
-    emit signal_appendWave("x0","z0",simPrm.real_time,z[0]);
-    emit signal_appendWave("x1","x1",simPrm.real_time,x[1]);
-    emit signal_appendWave("x1","z1",simPrm.real_time,z[1]);
-    emit signal_appendWave("u","u",simPrm.real_time,u[1]);
+    emit signal_appendWave("x","x0",simPrm.real_time,x[0]);
+    emit signal_appendWave("x","x1",simPrm.real_time,x[1]);
+    emit signal_appendWave("x","x2",simPrm.real_time,x[2]);
+    emit signal_appendWave("u","u1",simPrm.real_time,u[0]);
+    emit signal_appendWave("u","u2",simPrm.real_time,u[1]);
+    emit signal_appendWave("u","u3",simPrm.real_time,u[2]);
 }
 

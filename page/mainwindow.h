@@ -9,6 +9,7 @@
 #include "example/DR_CAN/can_lqr/can_lqr.hpp"
 #include "example/DR_CAN/can_follow_desired/can_follow_desired.hpp"
 #include "example/DR_CAN/can_luenberger/can_luenberger.hpp"
+#include "example/DR_CAN/can_basic_feedback/can_basic_feedback.hpp"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }

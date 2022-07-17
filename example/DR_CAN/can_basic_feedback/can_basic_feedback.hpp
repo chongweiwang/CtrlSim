@@ -30,17 +30,11 @@ public:
 
 private:
     void simulation(void);
-    void observer(void);
     void wavePlot(void);
 
-    double dx[2];
-    double  x[2];
-    double  u[2];
-
-    // observer
-    double dz[2];
-    double z[2];
-    double y;
+    double dx[3];
+    double  x[3];
+    double  u[3];
 };
 
 #endif

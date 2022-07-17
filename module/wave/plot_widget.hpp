@@ -1,7 +1,6 @@
 ﻿/**************************************************
  * @copyright (C) wangchongwei
  * @file       : plot_widget.hpp
- * @license:   : GNU GPLv2 
  * @author     : wangchongwei
  * @version    :
  * @date       : 2022/03/22
