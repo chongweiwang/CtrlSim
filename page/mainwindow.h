@@ -10,6 +10,10 @@
 #include "example/DR_CAN/can_follow_desired/can_follow_desired.hpp"
 #include "example/DR_CAN/can_luenberger/can_luenberger.hpp"
 #include "example/DR_CAN/can_basic_feedback/can_basic_feedback.hpp"
+#include "example/DR_CAN/can_adaptive_ctrl/can_adaptive_ctrl.hpp"
+#include "example/DR_CAN/can_sliding_mode/can_sliding_mode.hpp"
+#include "example/DR_CAN/can_back_step/can_back_step.hpp"
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
