@@ -6,6 +6,7 @@ HEADERS += \
     $$PWD/can_adaptive_ctrl/can_adaptive_ctrl.hpp \
     $$PWD/can_sliding_mode/can_sliding_mode.hpp \
     $$PWD/can_back_step/can_back_step.hpp \
+    $$PWD/can_robust_ctrl_compare/can_robust_ctrl_compare.hpp \
 
 SOURCES += \
     $$PWD/can_lqr/can_lqr.cpp \
@@ -15,5 +16,4 @@ SOURCES += \
     $$PWD/can_adaptive_ctrl/can_adaptive_ctrl.cpp \
     $$PWD/can_sliding_mode/can_sliding_mode.cpp \
     $$PWD/can_back_step/can_back_step.cpp \
-
-
+    $$PWD/can_robust_ctrl_compare/can_robust_ctrl_compare.cpp \

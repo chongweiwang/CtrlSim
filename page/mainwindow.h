@@ -13,6 +13,7 @@
 #include "example/DR_CAN/can_adaptive_ctrl/can_adaptive_ctrl.hpp"
 #include "example/DR_CAN/can_sliding_mode/can_sliding_mode.hpp"
 #include "example/DR_CAN/can_back_step/can_back_step.hpp"
+#include "example/DR_CAN/can_robust_ctrl_compare/can_robust_ctrl_compare.hpp"
 
 
 QT_BEGIN_NAMESPACE

@@ -15,11 +15,12 @@ MainWindow::MainWindow(QWidget *parent)
     //pSimObj = new CAN_Luenberger();
     //pSimObj = new CAN_BasicFeedback();
     //pSimObj = new CAN_AdaptiveCtrl();
-    pSimObj = new CAN_SlidingMode();
+    //pSimObj = new CAN_SlidingMode();
     //pSimObj = new CAN_BackStep();
+    pSimObj = new CAN_RobustCtrlCompare();
 
-    pSimObj->simPrm.end_time = 20;
-    pSimObj->simPrm.step_size = 0.00001;
+    pSimObj->simPrm.end_time = 5;
+    pSimObj->simPrm.step_size = 0.000001;
     pSimObj->simPrm.sample_freq_div = 100;
 
     connect(pSimObj, SIGNAL(signal_appendWave(QString,QString, double, double)), PgWave, SLOT(appendWaveData(QString,QString, double, double)));
