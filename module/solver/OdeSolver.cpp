@@ -22,6 +22,7 @@ OdeSolver::~OdeSolver()
 
 }
 
+// step_size 步长, order 阶数
 void OdeSolver::rk4(double *dx, double *x ,double *u,double step_size, uint32_t order)
 {
     double k1[MAX_ORDER], k2[MAX_ORDER], k3[MAX_ORDER], k4[MAX_ORDER], xk[MAX_ORDER];
@@ -64,7 +65,7 @@ void OdeSolver::euler(double *dx, double *x ,double *u,double step_size, uint32_
 
     for(i = 0; i < order; i++)
     {
-        x[i] =  x[i] + dx[i] * step_size;;
+        x[i] =  x[i] + dx[i] * step_size;
     }
 }
 

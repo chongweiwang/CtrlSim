@@ -20,6 +20,7 @@ CAN_Lqr::CAN_Lqr(SimObj *parent):SimObj(parent)
         u[i]  = 0;
     }
 
+    // 初始位移
     x[0] = 5;
 }
 
@@ -31,7 +32,9 @@ CAN_Lqr::~CAN_Lqr()
 
 void CAN_Lqr::dynamic_ode(double *dx, double *x,double *u)
 {
+    // dotx1 = x2
     dx[0] = x[1];
+    // dotx2 = 10*x1 - u
     dx[1] = 10*x[0] - u[1];
 }
 
@@ -69,7 +72,9 @@ void CAN_Lqr::sim_run(void)
 
 void CAN_Lqr::simulation(void)
 {
+    // u = -k1*x1-k2*x2
     u[1] = -k1*x[0]-k2*x[1];
+
     this->rk4(dx,x,u,simPrm.step_size,2);
 }
 
@@ -77,5 +82,5 @@ void CAN_Lqr::wavePlot(void)
 {
 
     emit signal_appendWave("x0","x0",simPrm.real_time,x[0]);
-    emit signal_appendWave("x0","x1",simPrm.real_time,x[1]);
+    emit signal_appendWave("x1","x1",simPrm.real_time,x[1]);
 }

@@ -27,7 +27,7 @@ HEADERS += \
 FORMS += \
 
 
-# include(page/page.pri)
+
 include(module/module.pri)
 include(example/DR_CAN/dr_can.pri)
 include(page/page.pri)
@@ -55,11 +55,20 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 contains(TARGET_ARCH, x86_64) {
     ARCHITECTURE = x64
     message("64-bit")
-    LIBS += -L$$PWD/module/wave/lib/x64/ -lplot_widget
+
+    CONFIG(debug,debug|release) {
+        LIBS += -L$$PWD/module/wave/lib/x64/ -lplot_widget
+    } else {
+    }
+
 } else {
     ARCHITECTURE = x86
     message("32-bit")
-    LIBS += -L$$PWD/module/wave/lib/x32/ -lplot_widget
+    CONFIG(debug,debug|release) {
+        LIBS += -L$$PWD/module/wave/lib/x32/ -lplot_widget
+    } else {
+    }
+
 }
 
 INCLUDEPATH += $$PWD/module/wave/lib/inc
