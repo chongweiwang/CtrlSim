@@ -12,7 +12,16 @@
 #define _ODE_SOLVER_HPP_
 
 #include <cstdint>
+
 #define MAX_ORDER  20
+
+
+enum ODE_SOLVE_TYPE
+{
+    ODE_SOLVE_EULER,
+    ODE_SOLVE_RK4,
+};
+
 
 class OdeSolver
 {

@@ -28,10 +28,11 @@ FORMS += \
 
 
 
-include(module/module.pri)
-include(example/DR_CAN/dr_can.pri)
+include(example/example.pri)
 include(page/page.pri)
-
+include(lib/lib.pri)
+include(model/model.pri)
+include(module/module.pri)
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

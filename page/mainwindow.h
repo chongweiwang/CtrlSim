@@ -16,6 +16,8 @@
 #include "example/DR_CAN/can_robust_ctrl_compare/can_robust_ctrl_compare.hpp"
 
 
+#include "example/MtCtrl/mc_dc_brush_ctrl/mc_dc_brush_ctrl.hpp"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
