@@ -17,6 +17,8 @@
 
 
 #include "example/MtCtrl/mc_dc_brush_ctrl/mc_dc_brush_ctrl.hpp"
+#include "example/MtCtrl/mc_pmsm_basic_ctrl/mc_pmsm_basic_ctrl.hpp"
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }

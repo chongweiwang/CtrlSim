@@ -22,7 +22,8 @@ MainWindow::MainWindow(QWidget *parent)
     //pSimObj = new CAN_RobustCtrlCompare();
 
 
-    pSimObj = new McDcBrushCtrl();
+    // pSimObj = new McDcBrushCtrl();
+    pSimObj = new McPmsmBasicCtrl();
     // 仿真的参数
     pSimObj->simPrm.end_time = 5;
     pSimObj->simPrm.step_size = 0.000001;

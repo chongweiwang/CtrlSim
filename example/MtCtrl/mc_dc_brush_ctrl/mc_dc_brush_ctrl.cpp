@@ -11,12 +11,13 @@
  **/
 
 #include "mc_dc_brush_ctrl.hpp"
+#include <math.h>
 
 McDcBrushCtrl::McDcBrushCtrl(SimObj *parent):SimObj(parent)
 {
     BDC_Space::CfgPrm_t cfg;
 
-    cfg.nameplate.rated_cur = 6;
+    cfg.nameplate.rated_cur = 5;
     cfg.nameplate.rated_vol = 24;
     cfg.nameplate.rated_vel = 2500;
 
@@ -28,7 +29,7 @@ McDcBrushCtrl::McDcBrushCtrl(SimObj *parent):SimObj(parent)
     bdc.setConfigPrm(cfg);
 
     /*set pid parm*/
-    vel_pid.setCtrlParm(11.111,0.030,0);
+    vel_pid.setCtrlParm(11.111,0.034,0);
     vel_pid.setClampParm(1.0,-1.0);
 
     /*set pid parm*/
@@ -90,7 +91,9 @@ void McDcBrushCtrl::simulation(void)
     uint32_t us = simPrm.real_time*1000000;
 
 
-    uint32_t vel_rpm_cmd = 1000;
+    //uint32_t vel_rpm_cmd = 1000;
+    uint32_t vel_rpm_cmd = sin(simPrm.real_time*50)*100+ 1000;
+
 
     vel_dm_pu = vel_rpm_cmd/bdc.cfg.nameplate.rated_vel;
 
@@ -108,7 +111,7 @@ void McDcBrushCtrl::simulation(void)
     }
 
     bdc.in.Ua = bdc.cfg.nameplate.rated_vol*vol_dm_pu;
-    bdc.in.TL = 0.05;
+    bdc.in.TL = 0.01;
 
 
     bdc.simulation(simPrm.step_size,ODE_SOLVE_RK4);
@@ -117,7 +120,7 @@ void McDcBrushCtrl::simulation(void)
 void McDcBrushCtrl::wavePlot(void)
 {
     emit signal_appendWave("rpm","rpm",simPrm.real_time,bdc.out.rpm);
-
+    emit signal_appendWave("rpm","ref",simPrm.real_time,vel_dm_pu*bdc.cfg.nameplate.rated_vel);
     emit signal_appendWave("Ia","ref",simPrm.real_time,cur_dm_pu*bdc.cfg.nameplate.rated_cur);
     emit signal_appendWave("Ia","Ia",simPrm.real_time,bdc.out.Ia);
     emit signal_appendWave("theta","theta",simPrm.real_time,bdc.out.theta);
