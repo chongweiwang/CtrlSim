@@ -1,19 +1,19 @@
 ﻿/**
  * @copyright   Copyright wangchongwei 
  * @license:    GNU GPLv2
- * @brief:      mc_pmsm_basic_ctrl
- * @date        2022.07.23
+ * @brief:      Synchronization at Startup and Stable Rotation Reversal of Sensorless Nonsalient PMSM Drives
+ *              https://www.bilibili.com/video/BV1qf4y127uJ?spm_id_from=333.999.0.0&vd_source=1f88f15c4a8c95c1d720fa4c6218bc54
+ * @date        2022.08.18
  * @changelog:
  * date         author          notes
- * 2021.10.24   wangchongwei    create file 
- * 2022.05.06   wangchongwei    cpp
- * 2022.07.23   wangchongwei    new version
+ * 2022.08.18   wangchongwei    create file 
  **/
 
 
-#include "mc_pmsm_basic_ctrl.hpp"
+#include "mc_pmsm_scvm_sensorless.hpp"
+#include <cmath>
 
-McPmsmBasicCtrl::McPmsmBasicCtrl(SimObj *parent):SimObj(parent)
+McPmsmScvmSensorless::McPmsmScvmSensorless(SimObj *parent):SimObj(parent)
 {
     pmsm.cfg.nameplate.rated_cur = 5.9;
     pmsm.cfg.nameplate.rated_pow = 200;
@@ -29,7 +29,7 @@ McPmsmBasicCtrl::McPmsmBasicCtrl(SimObj *parent):SimObj(parent)
     pmsm.cfg.J   = 0.0000258;
     pmsm.cfg.Pn  = 3;
 
-    double bandwidth = 2000;
+    double bandwidth = 1200;
     double cur_kPBase = pmsm.cfg.Lq * bandwidth * (pmsm.cfg.nameplate.rated_cur/pmsm.cfg.nameplate.rated_vol);
     double cur_kIBase = pmsm.cfg.Rs * bandwidth * (pmsm.cfg.nameplate.rated_cur/pmsm.cfg.nameplate.rated_vol) / 20000;
 
@@ -41,7 +41,7 @@ McPmsmBasicCtrl::McPmsmBasicCtrl(SimObj *parent):SimObj(parent)
     Id_pid.setClampParm(0.5,-0.5);
 
     double K = 1.5*pmsm.cfg.Pn * pmsm.cfg.psi / pmsm.cfg.J;
-    double delta = 5;
+    double delta = 14;
     double vel_kiBase = (bandwidth/(delta*delta));
     double vel_kpBase = (delta*vel_kiBase)/ K;
     vel_kiBase = vel_kiBase*vel_kpBase /20000;
@@ -54,20 +54,20 @@ McPmsmBasicCtrl::McPmsmBasicCtrl(SimObj *parent):SimObj(parent)
 
 }
 
-McPmsmBasicCtrl::~McPmsmBasicCtrl()
+McPmsmScvmSensorless::~McPmsmScvmSensorless()
 {
 
 }
 
 
-void McPmsmBasicCtrl::dynamic_ode(double *dx, double *x,double *u)
+void McPmsmScvmSensorless::dynamic_ode(double *dx, double *x,double *u)
 {
     Q_UNUSED(dx);
     Q_UNUSED(x);
     Q_UNUSED(u);
 }
 
-void McPmsmBasicCtrl::run(void)
+void McPmsmScvmSensorless::run(void)
 {
     while (1)
     {
@@ -93,12 +93,12 @@ void McPmsmBasicCtrl::run(void)
 }
 
 
-void McPmsmBasicCtrl::sim_run(void)
+void McPmsmScvmSensorless::sim_run(void)
 {
     run();
 }
 
-void McPmsmBasicCtrl::foc_cur_loop(void)
+void McPmsmScvmSensorless::foc_cur_loop(void)
 {
     double st = sin(foc.i_ele_angle);
     double ct = cos(foc.i_ele_angle);
@@ -116,20 +116,51 @@ void McPmsmBasicCtrl::foc_cur_loop(void)
     inv_clark_amp(foc.m_vol_alpha_pu,foc.m_vol_beta_pu,&foc.o_Ua_pu, &foc.o_Ub_pu, &foc.o_Uc_pu);
 }
 
-void McPmsmBasicCtrl::vel_loop(void)
+void McPmsmScvmSensorless::vel_loop(void)
 {
     Vel.o_tor_ctrl_pu =  vel_pid.PI(Vel.i_ref_rmp_pu - Vel.i_rpm_fb_pu);
 }
 
-void McPmsmBasicCtrl::simulation(void)
+
+#define LAMBDA  2
+#define TUNING_A 2.5
+#define TUNING_B 2
+#define RPM2RADS 0.1047
+void McPmsmScvmSensorless::harnefos_scvm(void)
+{
+    #define MPI                 3.141592
+    #define SQ(x)				((x) * (x))
+
+    double Ed = 0, Eq = 0;
+
+    double lambda_sign = LAMBDA *(scvm.omega<0?-1:1);
+    double alpha_w = TUNING_A*(pmsm.cfg.nameplate.rated_vel *RPM2RADS) + TUNING_B*LAMBDA*(scvm.omega<0?-scvm.omega: scvm.omega);
+
+    Ed = scvm.i_Vd - pmsm.cfg.Rs * scvm.i_Id + scvm.omega*pmsm.cfg.Lq* scvm.i_Iq;
+    Eq = scvm.i_Vq - pmsm.cfg.Rs * scvm.i_Iq - scvm.omega*pmsm.cfg.Lq* scvm.i_Id;
+
+    scvm.theta += scvm.i_step_size * scvm.omega;
+    scvm.omega += scvm.i_step_size*alpha_w * ((Eq-lambda_sign*Ed)/pmsm.cfg.psi - scvm.omega);
+
+
+    while(scvm.theta>2*M_PI) scvm.theta-=2*M_PI;
+    while(scvm.theta<0) scvm.theta+=2*M_PI;
+}
+
+
+void McPmsmScvmSensorless::simulation(void)
 {
     static  uint32_t last_us = 0;
     uint32_t us = simPrm.real_time*1000000;
 
     Ctrl.ctrl_mode = PMSM_BASIC_CTRL_VEL;
     Ctrl.id = 0;
-    Ctrl.iq = 1 ;
-    Ctrl.vel = -1000;
+    Ctrl.iq = 6 ;
+    Ctrl.vel = 1000;
+
+
+    pmsm.in.TL = 0.101;
+    pmsm.simulation(simPrm.step_size,ODE_SOLVE_RK4);
 
     /*50us ctrl period*/
     if (us-last_us >= 50)
@@ -150,13 +181,44 @@ void McPmsmBasicCtrl::simulation(void)
             break;
         }
 
+        /***observer**/
+        scvm.i_Id = foc.m_Id_pu * pmsm.cfg.nameplate.rated_cur;
+        scvm.i_Iq = foc.m_Iq_pu * pmsm.cfg.nameplate.rated_cur;
+
+        scvm.i_Vd = foc.o_Vd_pu * pmsm.cfg.nameplate.rated_vol;
+        scvm.i_Vq = foc.o_Vq_pu  * pmsm.cfg.nameplate.rated_vol;
+
+        scvm.i_step_size = 0.00005;
+
+
+        harnefos_scvm();
+        scvm.rpm = scvm.omega * 60 / (2*MPI * pmsm.cfg.Pn);
+
+
+        if (us> 0)
+        {
+            /*get pmsm feedback */
+            foc.i_ele_angle = scvm.theta;
+            Vel.i_rpm_fb_pu = scvm.rpm / pmsm.cfg.nameplate.rated_vel;
+
+        }
+        else
+        {
+            foc.i_ele_angle = pmsm.out.theta_elec;
+            Vel.i_rpm_fb_pu = pmsm.out.rpm / pmsm.cfg.nameplate.rated_vel;
+        }
+
+        foc.i_ele_angle = scvm.theta;
+
+
         /* speed loop */
-        Vel.i_rpm_fb_pu = pmsm.out.rpm / pmsm.cfg.nameplate.rated_vel;
-        vel_loop();
+        static int vc_cnt = 0;
+        if (vc_cnt++ == 4)
+        {
+            vc_cnt = 0;
+            vel_loop();
+        }
 
-
-        /*get pmsm feedback */
-        foc.i_ele_angle = pmsm.out.theta_elec;
         foc.i_cur_pu[0] = pmsm.out.Ia / pmsm.cfg.nameplate.rated_cur;
         foc.i_cur_pu[1] = pmsm.out.Ib / pmsm.cfg.nameplate.rated_cur;
         foc.i_cur_pu[2] = pmsm.out.Ic / pmsm.cfg.nameplate.rated_cur;
@@ -169,21 +231,24 @@ void McPmsmBasicCtrl::simulation(void)
     pmsm.in.Ub = foc.o_Ub_pu * pmsm.cfg.nameplate.rated_vol;
     pmsm.in.Uc = foc.o_Uc_pu * pmsm.cfg.nameplate.rated_vol;
 
-    pmsm.in.TL = 0.001;
-    pmsm.simulation(simPrm.step_size,ODE_SOLVE_RK4);
+
 }
 
-void McPmsmBasicCtrl::wavePlot(void)
+void McPmsmScvmSensorless::wavePlot(void)
 {
     emit signal_appendWave("theta","theta",simPrm.real_time,pmsm.out.theta_elec);
-    emit signal_appendWave("RPM","RPM",simPrm.real_time,pmsm.out.rpm);
+    emit signal_appendWave("theta","observer",simPrm.real_time,scvm.theta);
+
+    emit signal_appendWave("rmp","rmp",simPrm.real_time, pmsm.out.rpm);
+    emit signal_appendWave("rmp","observer",simPrm.real_time, scvm.rpm);
+
 
     emit signal_appendWave("udq","Uq",simPrm.real_time,pmsm.out.Uq);
     emit signal_appendWave("udq","Ud",simPrm.real_time,pmsm.out.Ud);
 
-    emit signal_appendWave("Iq","Iq_fb",simPrm.real_time,foc.i_ref_Iq_pu * pmsm.cfg.nameplate.rated_cur);
-    emit signal_appendWave("Iq","Iq_ref",simPrm.real_time,pmsm.out.Iq );
+    emit signal_appendWave("Iq","Iq_ref",simPrm.real_time,foc.i_ref_Iq_pu * pmsm.cfg.nameplate.rated_cur);
+    emit signal_appendWave("Iq","Iq_fb",simPrm.real_time,foc.m_Iq_pu * pmsm.cfg.nameplate.rated_cur);
 
-    emit signal_appendWave("Id","Id_fb",simPrm.real_time,pmsm.out.Id );
+    emit signal_appendWave("Id","Id_fb",simPrm.real_time,foc.m_Id_pu * pmsm.cfg.nameplate.rated_cur);
     emit signal_appendWave("Id","Id_ref",simPrm.real_time,foc.i_ref_Id_pu* pmsm.cfg.nameplate.rated_cur);
 }
