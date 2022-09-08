@@ -24,8 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     // pSimObj = new McDcBrushCtrl();
     // pSimObj = new McPmsmBasicCtrl();
-     pSimObj = new McPmsmFluxObserver();
-    // pSimObj = new McPmsmScvmSensorless();
+    // pSimObj = new McPmsmFluxObserver();
+     pSimObj = new McPmsmScvmSensorless();
 
     // 仿真的参数
     pSimObj->simPrm.end_time = 5;
