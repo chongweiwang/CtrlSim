@@ -8,7 +8,8 @@
 提取码：g7p6 
 
 
-#### example：
+
+#### example:
 1. DR_CAN老师讲课的用simulink仿真的例子。 
     - LQR
     - 轨迹跟随
@@ -24,4 +25,9 @@
     - PMSM_FOC id=0, 速度电流环
     - sensorless 非线性磁链观测器(本杰明电调)
     - sensorless 静态补偿电压模型(Lennart Harnefors)(陈嘉豪博士b站视频)
+    - sensorless 滑模观测器(TI SMO)
 
+#### model:
+1. 电机
+    - 直流有刷电机
+    - PMSM

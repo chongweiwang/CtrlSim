@@ -54,7 +54,7 @@ struct OutPrm_t BaiscPmsm::getOutPrm()
 }
 
 /**
- * @brief: pmsm mathematical model 
+ * @brief: pmsm mathematical model
  * @details: Differential equation:
  *  dId/dt = (Ud-RdId+we*LqIq)/Ld
  *  dIq/dt = (Uq-RqIq-we*LdId-we*Psi)/Lq
@@ -64,7 +64,7 @@ struct OutPrm_t BaiscPmsm::getOutPrm()
  *  we = Pn*wr
  *  dthetaE/dt = we
  *  rpm = (30/pi) *wr
- * 
+ *
  *  dx[id,iq,dwr,dthetaR,dthetaE]  x[id,iq,wr,thetaR,theta_elec]
 */
 void BaiscPmsm::dynamic_ode(double *dx, double *x, double *u)
@@ -122,4 +122,9 @@ void BaiscPmsm::simulation(double step_size, enum ODE_SOLVE_TYPE type)
     dq2abc_amp(out.Id,out.Iq,st,ct,&out.Ia,&out.Ib,&out.Ic);
 
     // emf
+    out.emf_d = 0;
+    out.emf_q = out.omega_elec * cfg.psi;
+
+    inv_park(out.emf_d,out.emf_q,st,ct, &out.emf_alpha,&out.emf_beta);
+    dq2abc_amp(out.emf_d,out.emf_q,st,ct,&out.emf_a,&out.emf_b,&out.emf_c);
 }

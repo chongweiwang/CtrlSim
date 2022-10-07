@@ -1,19 +1,18 @@
 ﻿/**
  * @copyright   Copyright wangchongwei 
  * @license:    GNU GPLv2
- * @brief:      Synchronization at Startup and Stable Rotation Reversal of Sensorless Nonsalient PMSM Drives
- *              https://www.bilibili.com/video/BV1qf4y127uJ?spm_id_from=333.999.0.0&vd_source=1f88f15c4a8c95c1d720fa4c6218bc54
- * @date        2022.08.18
+ * @brief:      TI: Digital Motor Control Software Library: Target Independent Math Blocks         
+ * @date        2022.09.30
  * @changelog:
  * date         author          notes
- * 2022.08.18   wangchongwei    create file 
+ * 2022.09.30   wangchongwei    create file 
  **/
 
 
-#include "mc_pmsm_scvm_sensorless.hpp"
+#include "mc_pmsm_ti_smo.hpp"
 #include <cmath>
 
-McPmsmScvmSensorless::McPmsmScvmSensorless(SimObj *parent):SimObj(parent)
+McPmsmTiSmo::McPmsmTiSmo(SimObj *parent):SimObj(parent)
 {
     pmsm.cfg.nameplate.rated_cur = 5.9;
     pmsm.cfg.nameplate.rated_pow = 200;
@@ -29,7 +28,7 @@ McPmsmScvmSensorless::McPmsmScvmSensorless(SimObj *parent):SimObj(parent)
     pmsm.cfg.J   = 0.0000258;
     pmsm.cfg.Pn  = 3;
 
-    double bandwidth = 200;
+    double bandwidth = 1200;
     double cur_kPBase = pmsm.cfg.Lq * bandwidth * (pmsm.cfg.nameplate.rated_cur/pmsm.cfg.nameplate.rated_vol);
     double cur_kIBase = pmsm.cfg.Rs * bandwidth * (pmsm.cfg.nameplate.rated_cur/pmsm.cfg.nameplate.rated_vol) / 20000;
 
@@ -41,7 +40,7 @@ McPmsmScvmSensorless::McPmsmScvmSensorless(SimObj *parent):SimObj(parent)
     Id_pid.setClampParm(0.5,-0.5);
 
     double K = 1.5*pmsm.cfg.Pn * pmsm.cfg.psi / pmsm.cfg.J;
-    double delta = 4;
+    double delta = 10;
     double vel_kiBase = (bandwidth/(delta*delta));
     double vel_kpBase = (delta*vel_kiBase)/ K;
     vel_kiBase = vel_kiBase*vel_kpBase /20000;
@@ -52,22 +51,33 @@ McPmsmScvmSensorless::McPmsmScvmSensorless(SimObj *parent):SimObj(parent)
     vel_pid.setClampParm(1.0,-1.0);
 
 
+    smo.Fsmopos = exp((-pmsm.cfg.Rs/pmsm.cfg.Lq)*0.00005 );
+    smo.Gsmopos = (pmsm.cfg.nameplate.rated_vol/pmsm.cfg.nameplate.rated_cur )*(1/pmsm.cfg.Rs) *(1-smo.Fsmopos);
+    smo.Kslf = pmsm.cfg.nameplate.rated_vel/60 * pmsm.cfg.Pn *6.28 * 5 * 0.00005;
+    smo.Kslide = 0.3;
+    smo.E0 = 0.5;
+
+    speed.K1 = 20000*60/pmsm.cfg.nameplate.rated_vel /pmsm.cfg.Pn ;
+    speed.K2 = 0.05;
+    speed.K3 = 0.95;
+    speed.BaseRpm = pmsm.cfg.nameplate.rated_vel;
+
 }
 
-McPmsmScvmSensorless::~McPmsmScvmSensorless()
+McPmsmTiSmo::~McPmsmTiSmo()
 {
 
 }
 
 
-void McPmsmScvmSensorless::dynamic_ode(double *dx, double *x,double *u)
+void McPmsmTiSmo::dynamic_ode(double *dx, double *x,double *u)
 {
     Q_UNUSED(dx);
     Q_UNUSED(x);
     Q_UNUSED(u);
 }
 
-void McPmsmScvmSensorless::run(void)
+void McPmsmTiSmo::run(void)
 {
     while (1)
     {
@@ -93,12 +103,12 @@ void McPmsmScvmSensorless::run(void)
 }
 
 
-void McPmsmScvmSensorless::sim_run(void)
+void McPmsmTiSmo::sim_run(void)
 {
     run();
 }
 
-void McPmsmScvmSensorless::foc_cur_loop(void)
+void McPmsmTiSmo::foc_cur_loop(void)
 {
     double st = sin(foc.i_ele_angle);
     double ct = cos(foc.i_ele_angle);
@@ -116,39 +126,76 @@ void McPmsmScvmSensorless::foc_cur_loop(void)
     inv_clark_amp(foc.m_vol_alpha_pu,foc.m_vol_beta_pu,&foc.o_Ua_pu, &foc.o_Ub_pu, &foc.o_Uc_pu);
 }
 
-void McPmsmScvmSensorless::vel_loop(void)
+void McPmsmTiSmo::vel_loop(void)
 {
     Vel.o_tor_ctrl_pu =  vel_pid.PI(Vel.i_ref_rmp_pu - Vel.i_rpm_fb_pu);
 }
 
 
-#define LAMBDA  2
-#define TUNING_A 2.5
-#define TUNING_B 2
-#define RPM2RADS 0.1047
-void McPmsmScvmSensorless::harnefos_scvm(void)
+double limit_value(double val, double up, double low)
 {
-    #define MPI                 3.141592
-    #define SQ(x)				((x) * (x))
+    if (val > up)       return up;
+    else if (val < low) return low;
+    else                return val;
 
-    double Ed = 0, Eq = 0;
+}
 
-    double lambda_sign = LAMBDA *(scvm.omega<0?-1:1);
-    double alpha_w = TUNING_A*(pmsm.cfg.nameplate.rated_vel *RPM2RADS) + TUNING_B*LAMBDA*(scvm.omega<0?-scvm.omega: scvm.omega);
+void McPmsmTiSmo::ti_smo(void)
+{
+    /*	Sliding mode current observer	*/	
+    smo.EstIalpha = smo.Fsmopos * smo.EstIalpha + smo.Gsmopos*(smo.Valpha - smo.Ealpha - smo.Zalpha);
+    smo.EstIbeta  = smo.Fsmopos * smo.EstIbeta  + smo.Gsmopos*(smo.Vbeta  - smo.Ebeta -  smo.Zbeta);
 
-    Ed = scvm.i_Vd - pmsm.cfg.Rs * scvm.i_Id + scvm.omega*pmsm.cfg.Lq* scvm.i_Iq;
-    Eq = scvm.i_Vq - pmsm.cfg.Rs * scvm.i_Iq - scvm.omega*pmsm.cfg.Lq* scvm.i_Id;
+    /*	Current errors	*/	
+    smo.IalphaError = smo.EstIalpha - smo.Ialpha;
+    smo.IbetaError = smo.EstIbeta - smo.Ibeta;
 
-    scvm.theta += scvm.i_step_size * scvm.omega;
-    scvm.omega += scvm.i_step_size*alpha_w * ((Eq-lambda_sign*Ed)/pmsm.cfg.psi - scvm.omega);
+    /*  Sliding control calculator	*/																	
+	smo.IalphaError = limit_value (smo.IalphaError, smo.E0, -smo.E0);
+    smo.IbetaError  = limit_value (smo.IbetaError, smo.E0, -smo.E0);
+    smo.Zalpha = smo.IalphaError * 2 * smo.Kslide;
+    smo.Zbeta  = smo.IbetaError  * 2 * smo.Kslide;
 
+    /*	Sliding control filter -> back EMF calculator	*/
+    smo.Ealpha = smo.Ealpha + smo.Kslf * (smo.Zalpha - smo.Ealpha);
+    smo.Ebeta = smo.Ebeta + smo.Kslf * (smo.Zbeta - smo.Ebeta);
 
-    while(scvm.theta>2*M_PI) scvm.theta-=2*M_PI;
-    while(scvm.theta<0) scvm.theta+=2*M_PI;
+    /*	Rotor angle calculator -> Theta = atan(-Ealpha,Ebeta)	*/	
+    smo.Theta = atan2(-smo.Ealpha,  smo.Ebeta);
+
+    while(smo.Theta>2*M_PI) smo.Theta-=2*M_PI;
+    while(smo.Theta<0) smo.Theta+=2*M_PI;
+
+    
+}
+
+void McPmsmTiSmo::ti_speed_est(void)
+{
+    speed.Temp = speed.EstimatedTheta - speed.OldEstimatedTheta;
+
+    if (speed.Temp < -0.5)
+    {
+        speed.Temp += 1.0;
+    }
+    else if (speed.Temp > 0.5)
+    {
+        speed.Temp -= 1.0;
+    }
+
+    speed.Temp = speed.K1 * speed.Temp;
+
+    speed.Temp = speed.K2 * speed.EstimatedSpeed + speed.K3 *speed.Temp;
+
+    speed.Temp = limit_value(speed.Temp, 1, -1);
+    speed.EstimatedSpeed = speed.Temp;
+
+    speed.OldEstimatedTheta = speed.EstimatedTheta;
+
+    speed.EstimatedSpeedRpm = speed.EstimatedSpeed* speed.BaseRpm;
 }
 
 
-void McPmsmScvmSensorless::simulation(void)
+void McPmsmTiSmo::simulation(void)
 {
     static  uint32_t last_us = 0;
     uint32_t us = simPrm.real_time*1000000;
@@ -156,10 +203,9 @@ void McPmsmScvmSensorless::simulation(void)
     Ctrl.ctrl_mode = PMSM_BASIC_CTRL_VEL;
     Ctrl.id = 0;
     Ctrl.iq = 6 ;
-    Ctrl.vel = 1000;
+    Ctrl.vel = 2000;
 
 
-    pmsm.in.TL = 0.101;
     pmsm.simulation(simPrm.step_size,ODE_SOLVE_RK4);
 
     /*50us ctrl period*/
@@ -182,24 +228,25 @@ void McPmsmScvmSensorless::simulation(void)
         }
 
         /***observer**/
-        scvm.i_Id = foc.m_Id_pu * pmsm.cfg.nameplate.rated_cur;
-        scvm.i_Iq = foc.m_Iq_pu * pmsm.cfg.nameplate.rated_cur;
+        smo.Valpha = foc.m_vol_alpha_pu;
+        smo.Vbeta  = foc.m_vol_beta_pu;
+        smo.Ialpha = foc.m_cur_alpha_pu;
+        smo.Ibeta = foc.m_cur_beta_pu;
 
-        scvm.i_Vd = foc.o_Vd_pu * pmsm.cfg.nameplate.rated_vol;
-        scvm.i_Vq = foc.o_Vq_pu  * pmsm.cfg.nameplate.rated_vol;
+        ti_smo();
 
-        scvm.i_step_size = 0.00005;
-
-
-        harnefos_scvm();
-        scvm.rpm = scvm.omega * 60 / (2*MPI * pmsm.cfg.Pn);
+        speed.EstimatedTheta = smo.Theta/(2.0*3.141593);
+        /*angle pu to rpm pu, hz*60/base_rpm/npp */
+        ti_speed_est();
 
 
-        if (us> 0)
+
+        if (us> 50000)
         {
+
             /*get pmsm feedback */
-            foc.i_ele_angle = scvm.theta;
-            Vel.i_rpm_fb_pu = scvm.rpm / pmsm.cfg.nameplate.rated_vel;
+            foc.i_ele_angle = smo.Theta;
+            Vel.i_rpm_fb_pu = speed.EstimatedSpeedRpm / pmsm.cfg.nameplate.rated_vel;
 
         }
         else
@@ -208,8 +255,14 @@ void McPmsmScvmSensorless::simulation(void)
             Vel.i_rpm_fb_pu = pmsm.out.rpm / pmsm.cfg.nameplate.rated_vel;
         }
 
-        foc.i_ele_angle = scvm.theta;
-
+        if (us> 1000000)
+        {
+            pmsm.in.TL = 0.4101;
+        }
+        else
+        {
+            pmsm.in.TL = 0.0;
+        }
 
         /* speed loop */
         static int vc_cnt = 0;
@@ -234,14 +287,17 @@ void McPmsmScvmSensorless::simulation(void)
 
 }
 
-void McPmsmScvmSensorless::wavePlot(void)
+void McPmsmTiSmo::wavePlot(void)
 {
     emit signal_appendWave("theta","theta",simPrm.real_time,pmsm.out.theta_elec);
-    emit signal_appendWave("theta","observer",simPrm.real_time,scvm.theta);
+    emit signal_appendWave("theta","observer",simPrm.real_time,smo.Theta);
 
     emit signal_appendWave("rmp","rmp",simPrm.real_time, pmsm.out.rpm);
-    emit signal_appendWave("rmp","observer",simPrm.real_time, scvm.rpm);
+    emit signal_appendWave("rmp","speed",simPrm.real_time, speed.EstimatedSpeedRpm);
 
+    emit signal_appendWave("emf","alpha",simPrm.real_time,pmsm.out.emf_alpha);
+    emit signal_appendWave("emf","Ealpha",simPrm.real_time,(smo.Ealpha )*pmsm.cfg.nameplate.rated_vol);
+    emit signal_appendWave("emf","Zalpha",simPrm.real_time,(smo.Zalpha )*pmsm.cfg.nameplate.rated_vol);
 
     emit signal_appendWave("udq","Uq",simPrm.real_time,pmsm.out.Uq);
     emit signal_appendWave("udq","Ud",simPrm.real_time,pmsm.out.Ud);
@@ -251,4 +307,8 @@ void McPmsmScvmSensorless::wavePlot(void)
 
     emit signal_appendWave("Id","Id_fb",simPrm.real_time,foc.m_Id_pu * pmsm.cfg.nameplate.rated_cur);
     emit signal_appendWave("Id","Id_ref",simPrm.real_time,foc.i_ref_Id_pu* pmsm.cfg.nameplate.rated_cur);
+
+    emit signal_appendWave("i","alpha",simPrm.real_time, smo.Ialpha);
+    emit signal_appendWave("i","alpha_err",simPrm.real_time, smo.IalphaError);
+    emit signal_appendWave("i","alpha_est",simPrm.real_time, smo.EstIalpha);
 }

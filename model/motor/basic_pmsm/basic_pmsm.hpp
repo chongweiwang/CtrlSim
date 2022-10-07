@@ -1,5 +1,5 @@
 ﻿/**
- * @copyright   Copyright wangchongwei 
+ * @copyright   Copyright wangchongwei
  * @license:    GNU GPLv2
  * @brief:      BaiscPmsm
  * @date        2022.07.20
@@ -9,6 +9,7 @@
  * 2021.11.11   wangchongwei    add config value rated cur vol tor vel pow
  * 2022.05.06   wangchongwei    cpp
  * 2022.07.20   wangchongwei    new version
+ * 2022.07.20   wangchongwei    add back emf
  **/
 
 #ifndef _BASIC_PMSM_HPP_
@@ -24,7 +25,7 @@ namespace Basic_Pmsm_Space{
 
 struct CfgPrm_t
 {
-    struct 
+    struct
     {
         double rated_cur;
         double rated_vol;
@@ -32,7 +33,7 @@ struct CfgPrm_t
         double rated_vel;
         double rated_pow;
     }nameplate;
-    
+
 
     double  psi;
     double  Rs;
@@ -58,8 +59,10 @@ struct OutPrm_t
     double  omega_elec, omega_rotor;   /* rad/s */
     double  rpm;
 
-    double  theta_elec, theta_rotor;  
+    double  theta_elec, theta_rotor;
 
+    double  emf_d, emf_q;
+    double  emf_alpha, emf_beta;
     double  emf_a, emf_b, emf_c;
 
     double  Uq,Ud;
@@ -85,7 +88,7 @@ public:
 
 private:
     virtual void dynamic_ode(double *dx, double *x, double *u);
-    
+
     /* data */
     double m_dx[5];
     double m_x[5];
