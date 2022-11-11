@@ -20,16 +20,16 @@ MainWindow::MainWindow(QWidget *parent)
     //pSimObj = new CAN_SlidingMode();
     //pSimObj = new CAN_BackStep();
     //pSimObj = new CAN_RobustCtrlCompare();
-
+    pSimObj = new CAN_KalmanRecursive(); // end_time set 100
 
     // pSimObj = new McDcBrushCtrl();
     // pSimObj = new McPmsmBasicCtrl();
     // pSimObj = new McPmsmFluxObserver();
     // pSimObj = new McPmsmScvmSensorless();
-    pSimObj = new McPmsmTiSmo();
+    // pSimObj = new McPmsmTiSmo();
 
     // 仿真的参数
-    pSimObj->simPrm.end_time = 5;
+    pSimObj->simPrm.end_time = 100;
     pSimObj->simPrm.step_size = 0.000001;
     pSimObj->simPrm.sample_freq_div = 100;
 

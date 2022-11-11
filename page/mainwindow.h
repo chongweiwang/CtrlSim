@@ -14,6 +14,7 @@
 #include "example/DR_CAN/can_sliding_mode/can_sliding_mode.hpp"
 #include "example/DR_CAN/can_back_step/can_back_step.hpp"
 #include "example/DR_CAN/can_robust_ctrl_compare/can_robust_ctrl_compare.hpp"
+#include "example/DR_CAN/can_kalman_recursive/can_kalman_recursive.hpp"
 
 
 #include "example/MtCtrl/mc_dc_brush_ctrl/mc_dc_brush_ctrl.hpp"

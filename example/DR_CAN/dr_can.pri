@@ -7,6 +7,7 @@ HEADERS += \
     $$PWD/can_sliding_mode/can_sliding_mode.hpp \
     $$PWD/can_back_step/can_back_step.hpp \
     $$PWD/can_robust_ctrl_compare/can_robust_ctrl_compare.hpp \
+    $$PWD/can_kalman_recursive/can_kalman_recursive.hpp \
 
 SOURCES += \
     $$PWD/can_lqr/can_lqr.cpp \
@@ -17,3 +18,5 @@ SOURCES += \
     $$PWD/can_sliding_mode/can_sliding_mode.cpp \
     $$PWD/can_back_step/can_back_step.cpp \
     $$PWD/can_robust_ctrl_compare/can_robust_ctrl_compare.cpp \
+    $$PWD/can_kalman_recursive/can_kalman_recursive.cpp \
+
