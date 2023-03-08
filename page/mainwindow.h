@@ -22,7 +22,7 @@
 #include "example/MtCtrl/mc_pmsm_flux_observer/mc_pmsm_flux_observer.hpp"
 #include "example/MtCtrl/mc_pmsm_scvm_sensorless/mc_pmsm_scvm_sensorless.hpp"
 #include "example/MtCtrl/mc_pmsm_ti_smo/mc_pmsm_ti_smo.hpp"
-
+#include "example/MtCtrl/mc_pmsm_ladrc_ctrl/mc_pmsm_ladrc_ctrl.hpp"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }

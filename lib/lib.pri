@@ -9,6 +9,11 @@ SOURCES += \
     $$PWD/controller/pid/static_clamp_pid.cpp \
     $$PWD/controller/pid/inc_pid.cpp \
 
+HEADERS += \
+    $$PWD/controller/adrc/ladrc_1st.hpp \
+   
+SOURCES += \
+    $$PWD/controller/adrc/ladrc_1st.cpp \
 
 
 HEADERS += \
