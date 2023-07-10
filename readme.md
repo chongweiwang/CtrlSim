@@ -30,7 +30,8 @@
     - sensorless 非线性磁链观测器(本杰明电调)
     - sensorless 静态补偿电压模型(Lennart Harnefors)(陈嘉豪博士b站视频)
     - sensorless 滑模观测器(TI SMO)
-    - PMSM_FOC id=0, 一阶LADR控制器
+    - PMSM_FOC id=0, 1阶LADRC控制器
+    - PMSM_FOC id=0, 2阶LADRC控制器
 
 #### model:
 1. 电机

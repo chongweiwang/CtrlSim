@@ -28,8 +28,8 @@ MainWindow::MainWindow(QWidget *parent)
     // pSimObj = new McPmsmScvmSensorless();
     // pSimObj = new McPmsmTiSmo();
 
-    pSimObj = new McPmsmLadrcCtrl();
-
+    // pSimObj = new McPmsmLadrcCtrl();
+    pSimObj = new McPmsmLadrc2Ctrl();
     // 仿真的参数
     pSimObj->simPrm.end_time = 2;
     pSimObj->simPrm.step_size = 0.000001;

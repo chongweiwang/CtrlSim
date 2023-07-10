@@ -23,7 +23,7 @@
 #include "example/MtCtrl/mc_pmsm_scvm_sensorless/mc_pmsm_scvm_sensorless.hpp"
 #include "example/MtCtrl/mc_pmsm_ti_smo/mc_pmsm_ti_smo.hpp"
 #include "example/MtCtrl/mc_pmsm_ladrc_ctrl/mc_pmsm_ladrc_ctrl.hpp"
-
+#include "example/MtCtrl/mc_pmsm_ladrc2_ctrl/mc_pmsm_ladrc2_ctrl.hpp"
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE

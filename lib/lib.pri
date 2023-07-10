@@ -11,9 +11,11 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/controller/adrc/ladrc_1st.hpp \
+    $$PWD/controller/adrc/ladrc_2st.hpp \
    
 SOURCES += \
     $$PWD/controller/adrc/ladrc_1st.cpp \
+    $$PWD/controller/adrc/ladrc_2st.cpp \
 
 
 HEADERS += \
